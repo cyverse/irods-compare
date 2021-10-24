@@ -2,43 +2,46 @@ package commons
 
 import (
 	"fmt"
-	
+
 	yaml "gopkg.in/yaml.v2"
 )
 
 // Config holds the parameters list which can be configured
 type Config struct {
-	Host         string            `yaml:"host"`
-	Port         int               `yaml:"port"`
-	User    	string            `yaml:"user"`
-	Zone         string            `yaml:"zone"`
-	Password     string            `yaml:"password"`
-	SourcePath string `yaml:"src_path"`
+	Host            string `yaml:"host"`
+	Port            int    `yaml:"port"`
+	User            string `yaml:"user"`
+	Zone            string `yaml:"zone"`
+	Password        string `yaml:"password"`
+	SourcePath      string `yaml:"src_path"`
 	DestinationPath string `yaml:"dest_path"`
+	Colorize        bool   `yaml:"colorize"`
 }
 
 // NewDefaultConfig creates defaultConfig
 func NewDefaultConfig() *Config {
 	return &Config{
-		Host: "data.cyverse.org",
-		Port:         1247,
-		Zone: "iplant",
+		Host:     "data.cyverse.org",
+		Port:     1247,
+		Zone:     "iplant",
+		Colorize: true,
 	}
 }
 
 // NewConfigFromYAML creates Config from YAML
 func NewConfigFromYAML(yamlBytes []byte) (*Config, error) {
 	config := &Config{
-		Host: "data.cyverse.org",
-		Port: 1247,
-		Zone: "iplant",
+		Host:     "data.cyverse.org",
+		Port:     1247,
+		Zone:     "iplant",
+		Colorize: true,
 	}
 
 	err := yaml.Unmarshal(yamlBytes, &config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML - %v", err)
 	}
-	
+
 	return config, nil
 }
 

@@ -79,6 +79,7 @@ func processArguments() (*commons.Config, error, bool) {
 	flag.StringVar(&config.User, "u", "", "Set iRODS user (shorthand form)")
 	flag.StringVar(&config.Password, "password", "", "Set iRODS password")
 	flag.StringVar(&config.Password, "p", "", "Set iRODS password (shorthand form)")
+	flag.BoolVar(&config.Colorize, "color", true, "Colorize output")
 
 	flag.Parse()
 

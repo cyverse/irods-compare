@@ -14,6 +14,7 @@ import (
 	"github.com/cyverse/go-irodsclient/irods/fs"
 	"github.com/cyverse/go-irodsclient/irods/types"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -99,10 +100,15 @@ func main() {
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"#", "Path", "Hash", "File Size", "Consistent"})
+	t.AppendHeader(table.Row{"#", "Path", "Hash", "File Size", "Modified Time", "Consistent"})
+
+	if !config.Colorize {
+		logger.Info("Colorize disabled")
+		text.DisableColors()
+	}
 
 	for sourceFileIdx, sourceFile := range sourceFiles {
-		destinationFile, localSize, irodsSize, localHash, irodsHash, err := getComparison(conn, config.SourcePath, config.DestinationPath, sourceFile, isDestinationCollection)
+		destinationFile, localSize, irodsSize, localTime, irodsTime, localHash, irodsHash, err := getComparison(conn, config.SourcePath, config.DestinationPath, sourceFile, isDestinationCollection)
 		if err != nil {
 			if IsIRODSFileNotFoundError(err) {
 				// irods file not found
@@ -111,31 +117,35 @@ func main() {
 						sourceFileIdx + 1,
 						sourceFile,
 						"SKIP",
-						"SKIP",
-						"FALSE",
+						localSize,
+						localTime,
+						text.Colors{text.FgRed}.Sprintf("FALSE"),
 					},
 					{
 						"-->",
 						destinationFile,
-						"FILE NOT FOUND",
-						"FILE NOT FOUND",
-						"FALSE",
+						text.Colors{text.FgRed}.Sprintf("FILE NOT FOUND"),
+						text.Colors{text.FgRed}.Sprintf("FILE NOT FOUND"),
+						text.Colors{text.FgRed}.Sprintf("FILE NOT FOUND"),
+						text.Colors{text.FgRed}.Sprintf("FALSE"),
 					},
 				})
 			}
 
 			logger.Error(err)
 		} else {
-			consistent := "FALSE"
+			consistent := text.Colors{text.FgRed}.Sprintf("FALSE")
 			if localHash == irodsHash && localSize == irodsSize {
-				consistent = "TRUE"
+				consistent = text.Colors{text.FgGreen}.Sprintf("TRUE")
 			}
+
 			t.AppendRows([]table.Row{
 				{
 					sourceFileIdx + 1,
 					sourceFile,
 					localHash,
 					localSize,
+					localTime,
 					consistent,
 				},
 				{
@@ -143,9 +153,10 @@ func main() {
 					destinationFile,
 					irodsHash,
 					irodsSize,
+					irodsTime,
 					consistent,
 				},
-			})
+			}, table.RowConfig{})
 		}
 
 		t.AppendSeparator()
@@ -219,17 +230,18 @@ func calcChecksum(sourcePath string, hashAlg hash.Hash) (string, error) {
 	return sumString, nil
 }
 
-func getComparison(conn *connection.IRODSConnection, srcPath string, destPath string, srcFile string, isDestPathCollection bool) (string, int64, int64, string, string, error) {
+func getComparison(conn *connection.IRODSConnection, srcPath string, destPath string, srcFile string, isDestPathCollection bool) (string, int64, int64, time.Time, time.Time, string, string, error) {
+	emptyTime := time.Time{}
 	localFileinfo, err := os.Stat(srcFile)
 	if err != nil {
-		return "", 0, 0, "", "", err
+		return "", 0, 0, emptyTime, emptyTime, "", "", err
 	}
 
 	destinationFile := destPath
 	if isDestPathCollection {
 		absSourcePath, err := filepath.Abs(srcPath)
 		if err != nil {
-			return "", 0, 0, "", "", err
+			return "", 0, 0, emptyTime, emptyTime, "", "", err
 		}
 
 		if absSourcePath == srcFile {
@@ -242,7 +254,7 @@ func getComparison(conn *connection.IRODSConnection, srcPath string, destPath st
 			// calc relpath frmo source input and find the file in dest dir
 			relSourcePath, err := filepath.Rel(absSourcePath, srcFile)
 			if err != nil {
-				return "", 0, 0, "", "", err
+				return "", 0, 0, emptyTime, emptyTime, "", "", err
 			}
 
 			destinationFile = filepath.Join(destinationFile, relSourcePath)
@@ -254,7 +266,7 @@ func getComparison(conn *connection.IRODSConnection, srcPath string, destPath st
 	destinationDir := filepath.Dir(destinationFile)
 	destinationCollection, err := fs.GetCollection(conn, destinationDir)
 	if err != nil {
-		return destinationFile, 0, 0, "", "", &IRODSFileNotFoundError{
+		return destinationFile, localFileinfo.Size(), 0, localFileinfo.ModTime(), emptyTime, "", "", &IRODSFileNotFoundError{
 			message: fmt.Sprintf("failed to find parent dir - %s", destinationDir),
 		}
 	}
@@ -263,7 +275,7 @@ func getComparison(conn *connection.IRODSConnection, srcPath string, destPath st
 	destinationFileName := filepath.Base(destinationFile)
 	dataobject, err := fs.GetDataObjectMasterReplica(conn, destinationCollection, destinationFileName)
 	if err != nil {
-		return destinationFile, 0, 0, "", "", &IRODSFileNotFoundError{
+		return destinationFile, localFileinfo.Size(), 0, localFileinfo.ModTime(), emptyTime, "", "", &IRODSFileNotFoundError{
 			message: fmt.Sprintf("failed to find irods file - %s/%s", destinationDir, destinationFileName),
 		}
 	}
@@ -272,8 +284,13 @@ func getComparison(conn *connection.IRODSConnection, srcPath string, destPath st
 	md5hash := md5.New()
 	md5sum, err := calcChecksum(srcFile, md5hash)
 	if err != nil {
-		return destinationFile, 0, 0, "", "", err
+		return destinationFile, 0, 0, emptyTime, emptyTime, "", "", err
 	}
 
-	return destinationFile, localFileinfo.Size(), dataobject.Size, md5sum, dataobject.Replicas[0].CheckSum, nil
+	dataobjectTime := dataobject.Replicas[0].CreateTime
+	if dataobject.Replicas[0].ModifyTime.After(dataobjectTime) {
+		dataobjectTime = dataobject.Replicas[0].ModifyTime
+	}
+
+	return destinationFile, localFileinfo.Size(), dataobject.Size, localFileinfo.ModTime(), dataobjectTime, md5sum, dataobject.Replicas[0].CheckSum, nil
 }
