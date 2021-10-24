@@ -3,3 +3,4 @@ port: 1247
 user: 
 zone: iplant
 password: 
+colorize: true

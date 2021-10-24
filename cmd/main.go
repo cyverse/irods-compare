@@ -7,6 +7,7 @@ import (
 	"hash"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -248,7 +249,7 @@ func getComparison(conn *connection.IRODSConnection, srcPath string, destPath st
 			// source input was a file
 			// find the file in dest dir
 			sourceFileName := filepath.Base(srcFile)
-			destinationFile = filepath.Join(destinationFile, sourceFileName)
+			destinationFile = path.Join(destinationFile, sourceFileName)
 		} else {
 			// source input was a directory
 			// calc relpath frmo source input and find the file in dest dir
@@ -257,13 +258,13 @@ func getComparison(conn *connection.IRODSConnection, srcPath string, destPath st
 				return "", 0, 0, emptyTime, emptyTime, "", "", err
 			}
 
-			destinationFile = filepath.Join(destinationFile, relSourcePath)
+			destinationFile = path.Join(destinationFile, filepath.ToSlash(relSourcePath))
 		}
 	}
 
 	// check irods file
 	// get parent collection
-	destinationDir := filepath.Dir(destinationFile)
+	destinationDir := path.Dir(destinationFile)
 	destinationCollection, err := fs.GetCollection(conn, destinationDir)
 	if err != nil {
 		return destinationFile, localFileinfo.Size(), 0, localFileinfo.ModTime(), emptyTime, "", "", &IRODSFileNotFoundError{
@@ -272,7 +273,7 @@ func getComparison(conn *connection.IRODSConnection, srcPath string, destPath st
 	}
 
 	// get obj
-	destinationFileName := filepath.Base(destinationFile)
+	destinationFileName := path.Base(destinationFile)
 	dataobject, err := fs.GetDataObjectMasterReplica(conn, destinationCollection, destinationFileName)
 	if err != nil {
 		return destinationFile, localFileinfo.Size(), 0, localFileinfo.ModTime(), emptyTime, "", "", &IRODSFileNotFoundError{
