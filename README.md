@@ -27,7 +27,7 @@ Compare two directories recursively.
 
 In this case, `iRODS-Compare` will first find files in the given local directory and compare them with iRODS ones.  
 
-**OUTPUT: **
+OUTPUT:
 ```shell script
 ~/irods-compare/bin$ ./irods-compare -config config.yaml . /iplant/home/iychoi
 Password:
@@ -53,6 +53,6 @@ INFO[0005] Disconnecting the connection                  function=Disconnect pac
 ```
 
 # WIKI
-For more information about downloading pre-built binaries, building from source code, and more examples, please refer WIKI.
+For more information about downloading pre-built binaries, building from source code, and more examples, please refer WIKI.\
 WIKI: [https://github.com/cyverse/irods-compare/wiki](https://github.com/cyverse/irods-compare/wiki)
 https://github.com/cyverse/irods-compare/wiki
