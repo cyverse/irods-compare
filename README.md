@@ -1,8 +1,26 @@
 # irods-compare
 `iRODS-Compare` is a command-line tool that compares data between local disks and iRODS (CyVerse DataStore). It checks files out of sync using MD5 checksum and file size.
 
-# USAGE
+# Pre-built binaries
+`iRODS-Compare` can run on any OSes. We provide pre-built binaries for some OSes. If you cannot find one for your OS, you can build it from source code by yourself.
 
+Links for `iRODS-Compare` binaries `v0.1.1`:
+
+For Linux:
+- Intel 64Bit (amd64): [irods_compare_amd64_linux_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_amd64_linux_v0.1.1.tar)
+- Intel 32Bit (i386): [irods_compare_i386_linux_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_i386_linux_v0.1.1.tar)
+- ARM 64Bit: [irods_compare_arm64_linux_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_arm64_linux_v0.1.1.tar)
+- ARM 32Bit: [irods_compare_arm_linux_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_arm_linux_v0.1.1.tar)
+
+For Macos (OSX):
+- Intel 64Bit (amd64): [irods_compare_amd64_darwin_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_amd64_darwin_v0.1.1.tar)
+- ARM 64Bit: [irods_compare_arm64_darwin_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_arm64_darwin_v0.1.1.tar)
+
+For Windows:
+- Intel 64Bit (amd64): [irods_compare_amd64_windows_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_amd64_windows_v0.1.1.tar)
+- Intel 32Bit (i386): [irods_compare_i386_windows_v0.1.1.tar](https://github.com/cyverse/irods-compare/releases/download/v0.1.1/irods_compare_i386_windows_v0.1.1.tar)
+
+# USAGE
 Create config.yaml file to configure your iRODS account.
 ```yaml
 host: data.cyverse.org
